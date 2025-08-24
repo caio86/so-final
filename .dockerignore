@@ -1,0 +1,4 @@
+Dockerfile
+./arquivos_testes/
+.vagrant
+Vagrantfile
