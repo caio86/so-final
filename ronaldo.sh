@@ -1,6 +1,50 @@
 #!/usr/bin/env bash
 
-DEBUG=0
+# Function to display a spinning progress indicator
+show_spinner() {
+  local pid=$1
+  local delay=0.1
+  local spinstr='|/-\'
+
+  # Hide the cursor
+  echo -ne "\033[?25l"
+
+  while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+    local temp=${spinstr#?}
+    printf " [%c] " "$spinstr"
+    local spinstr=$temp${spinstr%"$temp"}
+    sleep $delay
+    printf "\b\b\b\b\b"
+  done
+
+  # Show cursor again
+  echo -ne "\033[?25h"
+  printf "    \b\b\b\b"
+}
+
+# Function to display a progress bar
+show_progress_bar() {
+  local pid=$1
+  local delay=0.1
+  local bar=""
+
+  # Hide the cursor
+  echo -ne "\033[?25l"
+
+  while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+    bar="${bar}="
+    printf " [%-20s] " "$bar"
+    sleep $delay
+    # Move cursor back to start of line
+    printf "\r"
+    if [ ${#bar} -eq 20 ]; then
+      bar=""
+    fi
+  done
+
+  # Show cursor again
+  echo -ne "\033[?25h"
+}
 
 usage() {
   echo "Uso: $0 <xz|bz|gz> <arquivo> <qtdRepeticoes>"
@@ -63,45 +107,33 @@ if ! is_positive_int "$3"; then
   usage
 fi
 
-start_time=$(date +%s%3N)
+tmp=$(mktemp)
+out="saida/$1-$(basename $2).csv"
+mkdir saida 2>/dev/null
+chmod 777 ./saida
 
-/usr/bin/time -v tar $TAR_OPTS $OUTFILE $INFILE
-# TAR_PID=$!
+echo "User time;System time;System input;System output;Swaps;Voluntary context switches;Involuntary context switches" >$out
+chmod 666 $out
 
-# Função para lidar com Ctrl+C
-# cleanup() {
-#   echo -e "\nInterrupção detectada. Finalizando processo TAR (PID: $TAR_PID)..."
-#   kill -TERM $TAR_PID 2>/dev/null
-#   wait $TAR_PID 2>/dev/null
-#   echo "Processo finalizado. Saindo..."
-#   exit 0
-# }
+for x in $(seq $3); do
+  /usr/bin/time -v tar $TAR_OPTS $OUTFILE $INFILE >/dev/null 2>$tmp &
+  pid=$!
 
-# Configura o trap para capturar Ctrl+C
-# trap cleanup SIGINT
+  echo "Executando repetição $x"
 
-# # Verifica se o processo existe antes de monitorar
-# if kill -0 $TAR_PID 2>/dev/null; then
-#   [[ $DEBUG == 1 ]] && echo "Monitorando context switches do processo TAR (PID: $TAR_PID)"
-#   [[ $DEBUG == 1 ]] && echo "Data/Hora | Voluntary | Nonvoluntary"
-#
-#   # Monitora enquanto o processo existir
-#   while kill -0 $TAR_PID 2>/dev/null; do
-#     # Coleta apenas as informações de context switches com timestamp
-#     if [ -f /proc/$TAR_PID/status ]; then
-#       voluntary=$(grep -E "^voluntary_ctxt_switches" /proc/$TAR_PID/status 2>/dev/null | awk '{print $2}')
-#       nonvoluntary=$(grep -E "^nonvoluntary_ctxt_switches" /proc/$TAR_PID/status 2>/dev/null | awk '{print $2}')
-#       [[ $DEBUG == 1 ]] && echo "$(date '+%Y-%m-%d %H:%M:%S') | $voluntary | $nonvoluntary"
-#     fi
-#     # sleep 0.5 # Intervalo de verificação reduzido
-#   done
-# else
-#   echo "Processo TAR não iniciou corretamente!"
-#   exit 1
-# fi
+  show_spinner $pid
 
-end_time=$(date +%s%3N)
+  ut=$(cat $tmp | awk -F ": " '/User/ {print $2}')
+  st=$(cat $tmp | awk -F ": " '/System/ {print $2}')
+  si=$(cat $tmp | awk -F ": " '/system input/ {print $2}')
+  so=$(cat $tmp | awk -F ": " '/system output/ {print $2}')
+  sw=$(cat $tmp | awk -F ": " '/Swaps/ {print $2}')
+  vc=$(cat $tmp | awk -F ": " '/Voluntary/ {print $2}')
+  ic=$(cat $tmp | awk -F ": " '/Involuntary/ {print $2}')
 
-exec_time=$((end_time - start_time))
+  echo "$ut;$st;$si;$so;$sw;$vc;$ic" >>$out
+done
+
+rm $tmp
 
 echo "Processo TAR finalizado. Monitoramento encerrado."
