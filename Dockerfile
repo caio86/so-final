@@ -2,9 +2,7 @@ FROM debian:13 as base
 
 RUN apt update
 
-# instalando ferramentas para o experimento
-# xz e bzip2
-RUN apt install -y xz-utils bzip2 time
+RUN apt install -y xz-utils
 
 WORKDIR /exp
 
@@ -22,10 +20,12 @@ RUN apt update
 
 # instalando ferramentas para o experimento
 # xz e bzip2
-RUN apt install -y xz-utils bzip2 time
+RUN apt install -y xz-utils bzip2 time procps
 
 WORKDIR /exp
 
 COPY --from=base /exp /exp
 
 COPY ronaldo.sh .
+
+ENTRYPOINT ["./ronaldo.sh"]
