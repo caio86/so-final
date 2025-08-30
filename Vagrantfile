@@ -23,6 +23,8 @@ Vagrant.configure("2") do |config|
 
     # Install Podman
     sudo apt install -y podman
+
+    sudo apt install -y python3-venv
   SHELL
 
 end
