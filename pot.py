@@ -1,56 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-# Docker
-## txt
-d_gz_txt_500 = pd.read_csv("./saida-docker/gz-txt_500MB.txt.csv", sep=";")
-d_gz_txt_5 = pd.read_csv("./saida-docker/gz-txt_5MB.txt.csv", sep=";")
-d_bz_txt_500 = pd.read_csv("./saida-docker/bz-txt_500MB.txt.csv", sep=";")
-d_bz_txt_5 = pd.read_csv("./saida-docker/bz-txt_5MB.txt.csv", sep=";")
-d_xz_txt_500 = pd.read_csv("./saida-docker/xz-txt_500MB.txt.csv", sep=";")
-d_xz_txt_5 = pd.read_csv("./saida-docker/xz-txt_5MB.txt.csv", sep=";")
-
-## png
-d_gz_png_500 = pd.read_csv("./saida-docker/gz-png_500MB.png.csv", sep=";")
-d_gz_png_5 = pd.read_csv("./saida-docker/gz-png_5MB.png.csv", sep=";")
-d_bz_png_500 = pd.read_csv("./saida-docker/bz-png_500MB.png.csv", sep=";")
-d_bz_png_5 = pd.read_csv("./saida-docker/bz-png_5MB.png.csv", sep=";")
-d_xz_png_500 = pd.read_csv("./saida-docker/xz-png_500MB.png.csv", sep=";")
-d_xz_png_5 = pd.read_csv("./saida-docker/xz-png_5MB.png.csv", sep=";")
-
-## mp4
-d_gz_mp4_500 = pd.read_csv("./saida-docker/gz-mp4_500MB.mp4.csv", sep=";")
-d_gz_mp4_5 = pd.read_csv("./saida-docker/gz-mp4_5MB.mp4.csv", sep=";")
-d_bz_mp4_500 = pd.read_csv("./saida-docker/bz-mp4_500MB.mp4.csv", sep=";")
-d_bz_mp4_5 = pd.read_csv("./saida-docker/bz-mp4_5MB.mp4.csv", sep=";")
-d_xz_mp4_500 = pd.read_csv("./saida-docker/xz-mp4_500MB.mp4.csv", sep=";")
-d_xz_mp4_5 = pd.read_csv("./saida-docker/xz-mp4_5MB.mp4.csv", sep=";")
-
-# Podman
-## txt
-p_gz_txt_500 = pd.read_csv("./saida-podman/gz-txt_500MB.txt.csv", sep=";")
-p_gz_txt_5 = pd.read_csv("./saida-podman/gz-txt_5MB.txt.csv", sep=";")
-p_bz_txt_500 = pd.read_csv("./saida-podman/bz-txt_500MB.txt.csv", sep=";")
-p_bz_txt_5 = pd.read_csv("./saida-podman/bz-txt_5MB.txt.csv", sep=";")
-p_xz_txt_500 = pd.read_csv("./saida-podman/xz-txt_500MB.txt.csv", sep=";")
-p_xz_txt_5 = pd.read_csv("./saida-podman/xz-txt_5MB.txt.csv", sep=";")
-
-## png
-p_gz_png_500 = pd.read_csv("./saida-podman/gz-png_500MB.png.csv", sep=";")
-p_gz_png_5 = pd.read_csv("./saida-podman/gz-png_5MB.png.csv", sep=";")
-p_bz_png_500 = pd.read_csv("./saida-podman/bz-png_500MB.png.csv", sep=";")
-p_bz_png_5 = pd.read_csv("./saida-podman/bz-png_5MB.png.csv", sep=";")
-p_xz_png_500 = pd.read_csv("./saida-podman/xz-png_500MB.png.csv", sep=";")
-p_xz_png_5 = pd.read_csv("./saida-podman/xz-png_5MB.png.csv", sep=";")
-
-## mp4
-p_gz_mp4_500 = pd.read_csv("./saida-podman/gz-mp4_500MB.mp4.csv", sep=";")
-p_gz_mp4_5 = pd.read_csv("./saida-podman/gz-mp4_5MB.mp4.csv", sep=";")
-p_bz_mp4_500 = pd.read_csv("./saida-podman/bz-mp4_500MB.mp4.csv", sep=";")
-p_bz_mp4_5 = pd.read_csv("./saida-podman/bz-mp4_5MB.mp4.csv", sep=";")
-p_xz_mp4_500 = pd.read_csv("./saida-podman/xz-mp4_500MB.mp4.csv", sep=";")
-p_xz_mp4_5 = pd.read_csv("./saida-podman/xz-mp4_5MB.mp4.csv", sep=";")
-
 
 def create_graph(
     data_sources: dict[str, list[pd.DataFrame]],
@@ -81,11 +31,13 @@ def create_graph(
         # Prepare data for plotting
         labels = []
         means = []
+        stds = []
 
         for category in data_sources:
             for _, dataframe in enumerate(data_sources[category]):
                 labels.append(category)
                 means.append(dataframe[metric].mean())
+                stds.append(dataframe[metric].std())
         # Create the plot
         plt.figure(figsize=(12, 8), dpi=300)
 
@@ -97,7 +49,17 @@ def create_graph(
             elif "podman" in label:
                 colors.append("salmon")
 
-        bars = plt.bar(labels, means, color=colors, edgecolor="black", linewidth=0.5)
+        bars = plt.bar(
+            labels,
+            means,
+            color=colors,
+            edgecolor="black",
+            linewidth=0.8,
+            yerr=stds,
+            capsize=5,
+            alpha=0.8,
+            error_kw={"elinewidth": 1.5},
+        )
 
         # Add value labels on top of each bar
         for bar, mean in zip(bars, means):
@@ -135,12 +97,12 @@ def create_graph(
         plt.savefig(fname=f"./graph-{metric}.png", bbox_inches="tight")
 
 
-# Corresponding data for each category
-data_sources = {
-    "docker-5MB": [d_gz_txt_5],
-    "podman-5MB": [p_gz_txt_5],
-    "docker-500MB": [d_gz_txt_500],
-    "podman-500MB": [p_gz_txt_500],
-}
-
-create_graph(data_sources, "gzip2", "txt")
+# # Corresponding data for each category
+# data_sources = {
+#     "docker-5MB": [d_gz_txt_5],
+#     "podman-5MB": [p_gz_txt_5],
+#     "docker-500MB": [d_gz_txt_500],
+#     "podman-500MB": [p_gz_txt_500],
+# }
+#
+# create_graph(data_sources, "gzip2", "txt")
