@@ -28,4 +28,4 @@ COPY --from=base /exp /exp
 
 COPY ronaldo.sh .
 
-ENTRYPOINT ["./ronaldo.sh"]
+# ENTRYPOINT ["./ronaldo.sh"]

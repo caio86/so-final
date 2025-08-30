@@ -1,2 +1,7 @@
 .vagrant
 arquivos_testes/
+saida-docker/
+saida-podman/
+.venv
+.direnv
+graph-*
